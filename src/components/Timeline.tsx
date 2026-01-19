@@ -319,12 +319,12 @@ export function Timeline() {
           {markers.map((marker) => (
             <div
               key={marker.id}
-              className="absolute top-0 h-full w-1 bg-red-500 cursor-ew-resize group z-20"
+              className="absolute top-0 h-full w-0.5 bg-red-500 cursor-ew-resize group z-20"
               style={{ left: `${getPositionPercent(marker.time)}%` }}
               onMouseDown={(e) => handleMarkerMouseDown(e, marker.id)}
             >
               {/* 标记手柄 */}
-              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-500 rounded-full" />
+              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full" />
               {/* 删除按钮 */}
               <button
                 className="absolute -top-6 left-1/2 -translate-x-1/2 w-5 h-5 bg-red-600 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity z-30"
@@ -341,11 +341,11 @@ export function Timeline() {
 
           {/* 当前播放位置 - 可拖动 */}
           <div
-            className="absolute top-0 h-full w-1 bg-blue-600 cursor-ew-resize z-30"
+            className="absolute top-0 h-full w-0.5 bg-blue-600 cursor-ew-resize z-30"
             style={{ left: `${getPositionPercent(currentTime)}%` }}
             onMouseDown={handlePlayheadMouseDown}
           >
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-blue-600 rotate-45 cursor-ew-resize" />
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-blue-600 rotate-45 cursor-ew-resize" />
           </div>
         </div>
       </div>
