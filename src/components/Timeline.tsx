@@ -169,9 +169,13 @@ export function Timeline() {
       const scrollContainer = scrollContainerRef.current;
       if (!container || !scrollContainer || duration <= 0) return 0;
 
-      const rect = container.getBoundingClientRect();
-      const mouseX = clientX - rect.left + scrollContainer.scrollLeft;
-      const percent = Math.max(0, Math.min(1, mouseX / (rect.width * zoomLevel)));
+      // 使用 scrollContainer 的宽度作为基准（未缩放的可视区域宽度）
+      const scrollRect = scrollContainer.getBoundingClientRect();
+      // 计算鼠标相对于可视区域的位置，加上滚动偏移
+      const mouseX = clientX - scrollRect.left + scrollContainer.scrollLeft;
+      // 计算在整个缩放后时间轴中的百分比
+      const totalWidth = scrollRect.width * zoomLevel;
+      const percent = Math.max(0, Math.min(1, mouseX / totalWidth));
       return percent * duration;
     },
     [duration, zoomLevel]
