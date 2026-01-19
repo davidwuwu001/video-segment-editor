@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useVideoStore } from '../store/videoStore';
-import { formatTime, calculateDuration } from '../utils/segmentUtils';
+import { formatTime, calculateDuration, parseTime } from '../utils/segmentUtils';
 import type { Segment } from '../types';
 
 interface SegmentListProps {
@@ -10,10 +10,13 @@ interface SegmentListProps {
 }
 
 export function SegmentList({ onExportSingle, onExportAll, onExportMerged }: SegmentListProps) {
-  const { segments, renameSegment, deleteSegment, toggleSegmentSelected, setCurrentTime, isExporting, exportProgress } =
+  const { segments, renameSegment, deleteSegment, toggleSegmentSelected, setCurrentTime, isExporting, exportProgress, updateSegmentTime, duration } =
     useVideoStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
+  const [editingTimeType, setEditingTimeType] = useState<'start' | 'end' | null>(null);
+  const [editingTimeValue, setEditingTimeValue] = useState('');
   const [showWindowCountModal, setShowWindowCountModal] = useState(false);
   const [remainingWindows, setRemainingWindows] = useState(0);
 
@@ -65,6 +68,69 @@ export function SegmentList({ onExportSingle, onExportAll, onExportMerged }: Seg
       setCurrentTime(segment.startTime);
     },
     [setCurrentTime]
+  );
+
+  // 开始编辑时间
+  const handleStartEditTime = useCallback((segment: Segment, type: 'start' | 'end') => {
+    setEditingTimeId(segment.id);
+    setEditingTimeType(type);
+    setEditingTimeValue(formatTime(type === 'start' ? segment.startTime : segment.endTime));
+  }, []);
+
+  // 保存时间编辑
+  const handleSaveTimeEdit = useCallback(() => {
+    if (!editingTimeId || !editingTimeType) return;
+    
+    const segment = segments.find(s => s.id === editingTimeId);
+    if (!segment) return;
+    
+    const newTime = parseTime(editingTimeValue);
+    if (newTime === null) {
+      alert('时间格式无效，请使用 MM:SS 或 HH:MM:SS 格式');
+      return;
+    }
+    
+    // 验证时间范围
+    if (newTime < 0 || newTime > duration) {
+      alert(`时间必须在 00:00 到 ${formatTime(duration)} 之间`);
+      return;
+    }
+    
+    const newStartTime = editingTimeType === 'start' ? newTime : segment.startTime;
+    const newEndTime = editingTimeType === 'end' ? newTime : segment.endTime;
+    
+    if (newStartTime >= newEndTime) {
+      alert('开始时间必须小于结束时间');
+      return;
+    }
+    
+    const success = updateSegmentTime(editingTimeId, newStartTime, newEndTime);
+    if (!success) {
+      alert('时间设置无效，可能与相邻片段冲突');
+    }
+    
+    setEditingTimeId(null);
+    setEditingTimeType(null);
+    setEditingTimeValue('');
+  }, [editingTimeId, editingTimeType, editingTimeValue, segments, duration, updateSegmentTime]);
+
+  // 取消时间编辑
+  const handleCancelTimeEdit = useCallback(() => {
+    setEditingTimeId(null);
+    setEditingTimeType(null);
+    setEditingTimeValue('');
+  }, []);
+
+  // 时间编辑键盘事件
+  const handleTimeKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handleSaveTimeEdit();
+      } else if (e.key === 'Escape') {
+        handleCancelTimeEdit();
+      }
+    },
+    [handleSaveTimeEdit, handleCancelTimeEdit]
   );
 
   const handleOpenYouzan = useCallback((count: number) => {
@@ -180,9 +246,49 @@ export function SegmentList({ onExportSingle, onExportAll, onExportMerged }: Seg
               </span>
             )}
 
-            {/* 时间信息 */}
-            <span className="text-sm text-gray-500 font-mono">
-              {formatTime(segment.startTime)} - {formatTime(segment.endTime)}
+            {/* 时间信息（可编辑） */}
+            <span className="text-sm text-gray-500 font-mono flex items-center gap-1">
+              {editingTimeId === segment.id && editingTimeType === 'start' ? (
+                <input
+                  type="text"
+                  value={editingTimeValue}
+                  onChange={(e) => setEditingTimeValue(e.target.value)}
+                  onBlur={handleSaveTimeEdit}
+                  onKeyDown={handleTimeKeyDown}
+                  autoFocus
+                  className="w-20 px-1 py-0.5 border rounded text-center text-sm"
+                  placeholder="00:00"
+                />
+              ) : (
+                <span
+                  className="cursor-pointer hover:text-blue-600 hover:bg-blue-50 px-1 rounded"
+                  onClick={() => handleStartEditTime(segment, 'start')}
+                  title="点击编辑开始时间"
+                >
+                  {formatTime(segment.startTime)}
+                </span>
+              )}
+              <span>-</span>
+              {editingTimeId === segment.id && editingTimeType === 'end' ? (
+                <input
+                  type="text"
+                  value={editingTimeValue}
+                  onChange={(e) => setEditingTimeValue(e.target.value)}
+                  onBlur={handleSaveTimeEdit}
+                  onKeyDown={handleTimeKeyDown}
+                  autoFocus
+                  className="w-20 px-1 py-0.5 border rounded text-center text-sm"
+                  placeholder="00:00"
+                />
+              ) : (
+                <span
+                  className="cursor-pointer hover:text-blue-600 hover:bg-blue-50 px-1 rounded"
+                  onClick={() => handleStartEditTime(segment, 'end')}
+                  title="点击编辑结束时间"
+                >
+                  {formatTime(segment.endTime)}
+                </span>
+              )}
             </span>
             <span className="text-sm text-gray-400 w-16">
               ({formatTime(calculateDuration(segment))})

@@ -74,15 +74,25 @@ class FFmpegService {
     });
 
     // 执行切分命令
+    // 两步法：先精确定位到关键帧，再切分
+    // 使用 -ss 在 -i 之前快速定位，然后用 -ss 0 确保从头开始
     await this.ffmpeg.exec([
-      '-i',
-      inputFileName,
       '-ss',
       startTime.toString(),
-      '-to',
-      endTime.toString(),
-      '-c',
-      'copy', // 无损复制
+      '-i',
+      inputFileName,
+      '-t',
+      (endTime - startTime).toString(),
+      '-c:v',
+      'copy',
+      '-c:a',
+      'copy',
+      '-avoid_negative_ts',
+      'make_zero',
+      '-fflags',
+      '+genpts+discardcorrupt',
+      '-movflags',
+      '+faststart',
       outputFileName,
     ]);
 
@@ -131,14 +141,22 @@ class FFmpegService {
       tempFiles.push(tempFileName);
 
       await this.ffmpeg.exec([
-        '-i',
-        inputFileName,
         '-ss',
         segment.startTime.toString(),
-        '-to',
-        segment.endTime.toString(),
-        '-c',
+        '-i',
+        inputFileName,
+        '-t',
+        (segment.endTime - segment.startTime).toString(),
+        '-c:v',
         'copy',
+        '-c:a',
+        'copy',
+        '-avoid_negative_ts',
+        'make_zero',
+        '-fflags',
+        '+genpts+discardcorrupt',
+        '-movflags',
+        '+faststart',
         tempFileName,
       ]);
     }

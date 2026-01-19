@@ -46,5 +46,6 @@ export interface VideoState {
   renameSegment: (id: string, name: string) => void;
   deleteSegment: (id: string) => void;
   toggleSegmentSelected: (id: string) => void;
+  updateSegmentTime: (id: string, startTime: number, endTime: number) => boolean;
   setExporting: (isExporting: boolean, progress?: number) => void;
 }

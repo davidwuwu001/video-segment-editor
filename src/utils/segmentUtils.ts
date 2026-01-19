@@ -40,6 +40,44 @@ export function formatTime(seconds: number): string {
 }
 
 /**
+ * 解析时间字符串为秒数
+ * 支持格式：MM:SS, HH:MM:SS, 或纯数字（秒）
+ * @param timeStr 时间字符串
+ * @returns 秒数，解析失败返回 null
+ */
+export function parseTime(timeStr: string): number | null {
+  const trimmed = timeStr.trim();
+  
+  // 纯数字（秒）
+  if (/^\d+(\.\d+)?$/.test(trimmed)) {
+    return parseFloat(trimmed);
+  }
+  
+  // MM:SS 或 HH:MM:SS 格式
+  const parts = trimmed.split(':').map(p => parseInt(p, 10));
+  
+  if (parts.some(isNaN)) {
+    return null;
+  }
+  
+  if (parts.length === 2) {
+    // MM:SS
+    const [m, s] = parts;
+    if (m < 0 || s < 0 || s >= 60) return null;
+    return m * 60 + s;
+  }
+  
+  if (parts.length === 3) {
+    // HH:MM:SS
+    const [h, m, s] = parts;
+    if (h < 0 || m < 0 || m >= 60 || s < 0 || s >= 60) return null;
+    return h * 3600 + m * 60 + s;
+  }
+  
+  return null;
+}
+
+/**
  * 将标记列表转换为片段列表
  * @param markers 标记列表
  * @param duration 视频总时长

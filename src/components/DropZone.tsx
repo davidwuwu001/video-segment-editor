@@ -1,11 +1,20 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useVideoStore } from '../store/videoStore';
 import { isValidVideoFormat, getSupportedFormats } from '../utils/fileValidation';
+import { storageService } from '../services/storageService';
 
 export function DropZone() {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [storedFileName, setStoredFileName] = useState<string | null>(null);
   const setVideoFile = useVideoStore((state) => state.setVideoFile);
+
+  // 检查是否有保存的状态
+  useEffect(() => {
+    if (storageService.hasStoredState()) {
+      setStoredFileName(storageService.getStoredFileName());
+    }
+  }, []);
 
   const handleFile = useCallback(
     (file: File) => {
@@ -14,6 +23,26 @@ export function DropZone() {
         setError(`不支持的格式。支持的格式: ${getSupportedFormats().join(', ')}`);
         return;
       }
+      
+      // 检查是否匹配保存的状态
+      if (storageService.isFileMatch(file)) {
+        const state = storageService.loadState();
+        if (state) {
+          setVideoFile(file);
+          // 延迟恢复分段信息
+          setTimeout(() => {
+            useVideoStore.setState({
+              duration: state.duration,
+              markers: state.markers,
+              segments: state.segments,
+            });
+          }, 200);
+          return;
+        }
+      }
+      
+      // 新文件，清除旧的存储
+      storageService.clearState();
       setVideoFile(file);
     },
     [setVideoFile]
@@ -82,6 +111,11 @@ export function DropZone() {
       </svg>
       <p className="text-gray-600 mb-2">拖拽视频文件到这里，或点击选择</p>
       <p className="text-gray-400 text-sm">支持 MP4, MOV, AVI, MKV 格式</p>
+      {storedFileName && (
+        <p className="text-blue-500 mt-2 text-sm">
+          💡 检测到上次编辑的视频：{storedFileName}，重新选择该文件可恢复分段
+        </p>
+      )}
       {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
     </div>
   );
