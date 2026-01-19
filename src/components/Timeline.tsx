@@ -68,7 +68,7 @@ export function Timeline() {
       const isPinchGesture = e.ctrlKey;
       
       if (isPinchGesture) {
-        // 捏合缩放手势
+        // 只有捏合手势才缩放
         e.preventDefault();
         
         // 获取容器的实际宽度（未缩放的基础宽度）
@@ -105,36 +105,8 @@ export function Timeline() {
             timeScaleScrollRef.current.scrollLeft = Math.max(0, newScrollLeft);
           }
         }, 0);
-      } else if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        // 纵向滚动 - 用于鼠标滚轮缩放
-        e.preventDefault();
-        
-        const rect = scrollContainer.getBoundingClientRect();
-        const baseWidth = rect.width;
-        const mouseX = e.clientX - rect.left + scrollContainer.scrollLeft;
-        const mouseTimePercent = mouseX / (baseWidth * zoomLevel);
-
-        const zoomDelta = e.deltaY > 0 ? -0.2 : 0.2;
-        const newZoomLevel = Math.max(1, Math.min(20, zoomLevel + zoomDelta));
-
-        if (Math.abs(newZoomLevel - zoomLevel) < 0.01) return;
-
-        const newMouseX = mouseTimePercent * baseWidth * newZoomLevel;
-        const newScrollLeft = newMouseX - (e.clientX - rect.left);
-
-        setZoomLevel(newZoomLevel);
-        
-        setTimeout(() => {
-          if (scrollContainer) {
-            scrollContainer.scrollLeft = Math.max(0, newScrollLeft);
-            setScrollOffset(Math.max(0, newScrollLeft));
-          }
-          if (timeScaleScrollRef.current) {
-            timeScaleScrollRef.current.scrollLeft = Math.max(0, newScrollLeft);
-          }
-        }, 0);
       }
-      // 横向滚动（两指左右滑动）会被浏览器自动处理，不需要阻止
+      // 其他情况（双指上下滑动、横向滚动）让浏览器自然处理，不阻止默认行为
     },
     [zoomLevel, setZoomLevel, setScrollOffset]
   );
@@ -297,7 +269,7 @@ export function Timeline() {
       {/* 缩放提示 */}
       <div className="flex items-center justify-between text-xs text-gray-500">
         <span>缩放级别: {zoomLevel.toFixed(1)}x</span>
-        <span>触控板：捏合缩放 | 两指左右滑动横向滚动 | 鼠标：滚轮缩放</span>
+        <span>触控板：捏合缩放 | 两指滑动横向滚动 | 双指上下滑动页面滚动</span>
       </div>
 
       {/* 时间轴容器 - 支持横向滚动 */}
