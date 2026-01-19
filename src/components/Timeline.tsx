@@ -7,6 +7,8 @@ export function Timeline() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timeScaleScrollRef = useRef<HTMLDivElement>(null);
   const [draggingMarkerId, setDraggingMarkerId] = useState<string | null>(null);
+  const [isPinching, setIsPinching] = useState(false);
+  const lastPinchDistanceRef = useRef<number>(0);
 
   const {
     duration,
@@ -15,6 +17,7 @@ export function Timeline() {
     segments,
     zoomLevel,
     scrollOffset,
+    isPlaying,
     setCurrentTime,
     addMarker,
     updateMarker,
@@ -54,48 +57,64 @@ export function Timeline() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentTime, duration, setCurrentTime]);
 
-  // 鼠标滚轮缩放
+  // 鼠标滚轮缩放（支持触控板和鼠标滚轮）
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
-      e.preventDefault();
+      // 检测是否是触控板捏合手势（ctrlKey 表示捏合缩放）
+      const isPinchGesture = e.ctrlKey;
       
-      const container = containerRef.current;
-      const scrollContainer = scrollContainerRef.current;
-      if (!container || !scrollContainer) return;
-
-      // 获取容器的实际宽度（未缩放的基础宽度）
-      const rect = scrollContainer.getBoundingClientRect();
-      const baseWidth = rect.width;
+      // 如果是普通的横向滚动（不是捏合），不做缩放处理
+      if (!isPinchGesture && Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        // 让浏览器处理横向滚动
+        return;
+      }
       
-      // 计算鼠标在时间轴上的实际位置（考虑滚动）
-      const mouseX = e.clientX - rect.left + scrollContainer.scrollLeft;
-      // 计算鼠标位置对应的时间百分比（基于当前缩放级别）
-      const mouseTimePercent = mouseX / (baseWidth * zoomLevel);
+      // 只有捏合手势或鼠标滚轮才进行缩放
+      if (isPinchGesture || !e.ctrlKey) {
+        e.preventDefault();
+        
+        const container = containerRef.current;
+        const scrollContainer = scrollContainerRef.current;
+        if (!container || !scrollContainer) return;
 
-      // 计算新的缩放级别
-      const zoomDelta = e.deltaY > 0 ? -0.2 : 0.2;
-      const newZoomLevel = Math.max(1, Math.min(20, zoomLevel + zoomDelta));
+        // 获取容器的实际宽度（未缩放的基础宽度）
+        const rect = scrollContainer.getBoundingClientRect();
+        const baseWidth = rect.width;
+        
+        // 计算鼠标在时间轴上的实际位置（考虑滚动）
+        const mouseX = e.clientX - rect.left + scrollContainer.scrollLeft;
+        // 计算鼠标位置对应的时间百分比（基于当前缩放级别）
+        const mouseTimePercent = mouseX / (baseWidth * zoomLevel);
 
-      // 如果缩放级别没有变化，直接返回
-      if (newZoomLevel === zoomLevel) return;
+        // 计算新的缩放级别
+        // 触控板捏合手势的 deltaY 通常较小，需要调整灵敏度
+        const zoomDelta = isPinchGesture 
+          ? (e.deltaY > 0 ? -0.1 : 0.1)  // 触控板更细腻
+          : (e.deltaY > 0 ? -0.2 : 0.2); // 鼠标滚轮更快
+        
+        const newZoomLevel = Math.max(1, Math.min(20, zoomLevel + zoomDelta));
 
-      // 计算新的滚动位置，使鼠标位置保持不变
-      const newMouseX = mouseTimePercent * baseWidth * newZoomLevel;
-      const newScrollLeft = newMouseX - (e.clientX - rect.left);
+        // 如果缩放级别没有变化，直接返回
+        if (newZoomLevel === zoomLevel) return;
 
-      setZoomLevel(newZoomLevel);
-      
-      // 延迟设置滚动位置，等待 DOM 更新
-      setTimeout(() => {
-        if (scrollContainer) {
-          scrollContainer.scrollLeft = Math.max(0, newScrollLeft);
-          setScrollOffset(Math.max(0, newScrollLeft));
-        }
-        // 同步时间刻度滚动
-        if (timeScaleScrollRef.current) {
-          timeScaleScrollRef.current.scrollLeft = Math.max(0, newScrollLeft);
-        }
-      }, 0);
+        // 计算新的滚动位置，使鼠标位置保持不变
+        const newMouseX = mouseTimePercent * baseWidth * newZoomLevel;
+        const newScrollLeft = newMouseX - (e.clientX - rect.left);
+
+        setZoomLevel(newZoomLevel);
+        
+        // 延迟设置滚动位置，等待 DOM 更新
+        setTimeout(() => {
+          if (scrollContainer) {
+            scrollContainer.scrollLeft = Math.max(0, newScrollLeft);
+            setScrollOffset(Math.max(0, newScrollLeft));
+          }
+          // 同步时间刻度滚动
+          if (timeScaleScrollRef.current) {
+            timeScaleScrollRef.current.scrollLeft = Math.max(0, newScrollLeft);
+          }
+        }, 0);
+      }
     },
     [duration, zoomLevel, setZoomLevel, setScrollOffset]
   );
@@ -138,12 +157,13 @@ export function Timeline() {
     [duration, zoomLevel]
   );
 
-  // 点击时间轴跳转
+  // 点击时间轴跳转（保持原播放状态）
   const handleTimelineClick = useCallback(
     (e: React.MouseEvent) => {
       if (draggingMarkerId) return;
       const time = getTimeFromPosition(e.clientX);
       setCurrentTime(time);
+      // 不改变 isPlaying 状态，保持原来的播放/暂停状态
     },
     [getTimeFromPosition, setCurrentTime, draggingMarkerId]
   );
@@ -253,7 +273,7 @@ export function Timeline() {
       {/* 缩放提示 */}
       <div className="flex items-center justify-between text-xs text-gray-500">
         <span>缩放级别: {zoomLevel.toFixed(1)}x</span>
-        <span>使用鼠标滚轮在时间轴上缩放</span>
+        <span>触控板捏合缩放 | 鼠标滚轮缩放 | 两指左右滑动横向滚动</span>
       </div>
 
       {/* 时间轴容器 - 支持横向滚动 */}
@@ -360,7 +380,7 @@ export function Timeline() {
 
       {/* 提示 */}
       <p className="text-xs text-gray-400 text-center">
-        双击时间轴添加标记 | 拖动标记调整位置 | 点击跳转播放位置 | 鼠标滚轮缩放 | ← → 快进/快退5秒 | ↑ ↓ 快进/快退30秒
+        双击时间轴添加标记 | 拖动标记调整位置 | 点击跳转播放位置（保持播放状态） | 触控板捏合/鼠标滚轮缩放 | ← → 快进/快退5秒 | ↑ ↓ 快进/快退30秒
       </p>
     </div>
   );
