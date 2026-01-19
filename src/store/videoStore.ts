@@ -59,6 +59,8 @@ export const useVideoStore = create<VideoState>((set, get) => ({
       isPlaying: false,
       markers: [],
       segments: [],
+      zoomLevel: 1,
+      scrollOffset: 0,
     });
     
     // 清除存储

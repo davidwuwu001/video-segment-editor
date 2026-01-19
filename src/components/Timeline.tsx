@@ -5,6 +5,7 @@ import { formatTime } from '../utils/segmentUtils';
 export function Timeline() {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const timeScaleScrollRef = useRef<HTMLDivElement>(null);
   const [draggingMarkerId, setDraggingMarkerId] = useState<string | null>(null);
 
   const {
@@ -62,18 +63,24 @@ export function Timeline() {
       const scrollContainer = scrollContainerRef.current;
       if (!container || !scrollContainer) return;
 
-      // 获取鼠标在时间轴上的位置
-      const rect = container.getBoundingClientRect();
+      // 获取容器的实际宽度（未缩放的基础宽度）
+      const rect = scrollContainer.getBoundingClientRect();
+      const baseWidth = rect.width;
+      
+      // 计算鼠标在时间轴上的实际位置（考虑滚动）
       const mouseX = e.clientX - rect.left + scrollContainer.scrollLeft;
-      const mouseTimePercent = mouseX / (rect.width * zoomLevel);
-      const mouseTime = mouseTimePercent * duration;
+      // 计算鼠标位置对应的时间百分比（基于当前缩放级别）
+      const mouseTimePercent = mouseX / (baseWidth * zoomLevel);
 
       // 计算新的缩放级别
       const zoomDelta = e.deltaY > 0 ? -0.2 : 0.2;
       const newZoomLevel = Math.max(1, Math.min(20, zoomLevel + zoomDelta));
 
+      // 如果缩放级别没有变化，直接返回
+      if (newZoomLevel === zoomLevel) return;
+
       // 计算新的滚动位置，使鼠标位置保持不变
-      const newMouseX = mouseTimePercent * rect.width * newZoomLevel;
+      const newMouseX = mouseTimePercent * baseWidth * newZoomLevel;
       const newScrollLeft = newMouseX - (e.clientX - rect.left);
 
       setZoomLevel(newZoomLevel);
@@ -81,19 +88,28 @@ export function Timeline() {
       // 延迟设置滚动位置，等待 DOM 更新
       setTimeout(() => {
         if (scrollContainer) {
-          scrollContainer.scrollLeft = newScrollLeft;
-          setScrollOffset(newScrollLeft);
+          scrollContainer.scrollLeft = Math.max(0, newScrollLeft);
+          setScrollOffset(Math.max(0, newScrollLeft));
+        }
+        // 同步时间刻度滚动
+        if (timeScaleScrollRef.current) {
+          timeScaleScrollRef.current.scrollLeft = Math.max(0, newScrollLeft);
         }
       }, 0);
     },
     [duration, zoomLevel, setZoomLevel, setScrollOffset]
   );
 
-  // 监听滚动事件
+  // 监听滚动事件，同步时间刻度滚动
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       const scrollLeft = e.currentTarget.scrollLeft;
       setScrollOffset(scrollLeft);
+      
+      // 同步时间刻度的滚动
+      if (timeScaleScrollRef.current) {
+        timeScaleScrollRef.current.scrollLeft = scrollLeft;
+      }
     },
     [setScrollOffset]
   );
@@ -201,22 +217,25 @@ export function Timeline() {
     // 根据缩放级别自动调整刻度间隔
     let interval: number;
     if (zoomLevel >= 10) {
-      interval = 0.1; // 0.1秒
+      interval = 1; // 1秒（高缩放时避免标签过密）
     } else if (zoomLevel >= 5) {
-      interval = 0.5; // 0.5秒
-    } else if (zoomLevel >= 2) {
-      interval = 1; // 1秒
-    } else if (zoomLevel >= 1.5) {
+      interval = 2; // 2秒
+    } else if (zoomLevel >= 3) {
       interval = 5; // 5秒
-    } else {
+    } else if (zoomLevel >= 2) {
       interval = 10; // 10秒
+    } else if (zoomLevel >= 1.5) {
+      interval = 15; // 15秒
+    } else {
+      interval = 30; // 30秒
     }
 
     const marks: number[] = [];
     for (let time = 0; time <= duration; time += interval) {
       marks.push(time);
     }
-    if (marks[marks.length - 1] !== duration) {
+    // 确保最后一个时间点总是显示
+    if (marks.length === 0 || marks[marks.length - 1] !== duration) {
       marks.push(duration);
     }
 
@@ -311,10 +330,17 @@ export function Timeline() {
         </div>
       </div>
 
-      {/* 时间刻度 - 根据缩放级别动态生成 */}
+      {/* 时间刻度 - 根据缩放级别动态生成，与时间轴同步滚动 */}
       <div
+        ref={timeScaleScrollRef}
         className="overflow-x-auto overflow-y-hidden"
         style={{ maxWidth: '100%' }}
+        onScroll={(e) => {
+          // 同步时间轴滚动
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollLeft = e.currentTarget.scrollLeft;
+          }
+        }}
       >
         <div
           className="relative text-xs text-gray-500"
@@ -324,7 +350,7 @@ export function Timeline() {
             <div
               key={index}
               className="absolute whitespace-nowrap"
-              style={{ left: `${getPositionPercent(time)}%` }}
+              style={{ left: `${getPositionPercent(time)}%`, transform: 'translateX(-50%)' }}
             >
               {formatTime(time)}
             </div>
