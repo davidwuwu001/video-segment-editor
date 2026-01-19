@@ -343,27 +343,28 @@ export function Timeline() {
           {markers.map((marker) => (
             <div
               key={marker.id}
-              className="absolute top-0 h-full cursor-ew-resize group z-20"
+              className="absolute top-0 h-full cursor-ew-resize z-20"
               style={{ 
                 left: `${getPositionPercent(marker.time)}%`,
-                width: '12px',
-                marginLeft: '-6px'
+                width: '20px',
+                marginLeft: '-10px'
               }}
               onMouseDown={(e) => handleMarkerMouseDown(e, marker.id)}
             >
               {/* 标记线 */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 h-full w-0.5 bg-red-500" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 h-full w-0.5 bg-red-500 pointer-events-none" />
               {/* 标记手柄 */}
-              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full" />
-              {/* 删除按钮 */}
+              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full pointer-events-none" />
+              {/* 删除按钮 - 始终显示 */}
               <button
-                className="absolute -top-6 left-1/2 -translate-x-1/2 w-5 h-5 bg-red-600 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity z-30"
+                className="absolute -top-6 left-1/2 -translate-x-1/2 w-5 h-5 bg-red-600 text-white rounded-full text-xs hover:bg-red-700 transition-colors z-30 flex items-center justify-center"
                 onClick={(e) => handleDeleteMarker(e, marker.id)}
+                title="删除标记"
               >
                 ×
               </button>
               {/* 时间提示 */}
-              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-gray-600 whitespace-nowrap">
+              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-gray-600 whitespace-nowrap pointer-events-none">
                 {formatTime(marker.time)}
               </div>
             </div>
