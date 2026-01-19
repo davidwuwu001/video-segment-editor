@@ -343,15 +343,21 @@ export function Timeline() {
           {markers.map((marker) => (
             <div
               key={marker.id}
-              className="absolute top-0 h-full w-0.5 bg-red-500 cursor-ew-resize group z-20"
-              style={{ left: `${getPositionPercent(marker.time)}%` }}
+              className="absolute top-0 h-full cursor-ew-resize group z-20"
+              style={{ 
+                left: `${getPositionPercent(marker.time)}%`,
+                width: '12px',
+                marginLeft: '-6px'
+              }}
               onMouseDown={(e) => handleMarkerMouseDown(e, marker.id)}
             >
+              {/* 标记线 */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 h-full w-0.5 bg-red-500" />
               {/* 标记手柄 */}
               <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full" />
               {/* 删除按钮 */}
               <button
-                className="absolute -top-6 left-1/2 -translate-x-1/2 w-5 h-5 bg-red-600 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity z-30"
+                className="absolute -top-6 left-1/2 -translate-x-1/2 w-5 h-5 bg-red-600 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity z-30"
                 onClick={(e) => handleDeleteMarker(e, marker.id)}
               >
                 ×
