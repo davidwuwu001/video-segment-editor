@@ -309,7 +309,7 @@ export function Timeline() {
       >
         <div
           ref={containerRef}
-          className="relative h-16 bg-gray-200 rounded-lg cursor-pointer select-none overflow-visible"
+          className="relative h-24 bg-gray-200 rounded-lg cursor-pointer select-none overflow-visible"
           style={{ width: `${zoomLevel * 100}%`, minWidth: '100%', paddingTop: '30px', paddingBottom: '30px' }}
           onClick={handleTimelineClick}
           onDoubleClick={handleDoubleClick}
@@ -330,7 +330,7 @@ export function Timeline() {
                 left: `${getPositionPercent(segment.startTime)}%`,
                 width: `${getPositionPercent(segment.endTime - segment.startTime)}%`,
                 top: '30px',
-                height: '64px'
+                height: '96px'
               }}
             >
               {!segment.selected && (
@@ -349,7 +349,7 @@ export function Timeline() {
               style={{ 
                 left: `${getPositionPercent(marker.time)}%`,
                 top: '30px',
-                height: '64px',
+                height: '96px',
                 width: '24px',
                 marginLeft: '-12px'
               }}
@@ -380,7 +380,7 @@ export function Timeline() {
             style={{ 
               left: `${getPositionPercent(currentTime)}%`,
               top: '30px',
-              height: '64px'
+              height: '96px'
             }}
             onMouseDown={handlePlayheadMouseDown}
           >
