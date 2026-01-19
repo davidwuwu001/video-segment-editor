@@ -345,7 +345,7 @@ export function Timeline() {
           {markers.map((marker) => (
             <div
               key={marker.id}
-              className="absolute cursor-ew-resize z-20"
+              className="absolute cursor-ew-resize group z-20"
               style={{ 
                 left: `${getPositionPercent(marker.time)}%`,
                 top: '30px',
@@ -355,9 +355,9 @@ export function Timeline() {
               }}
               onMouseDown={(e) => handleMarkerMouseDown(e, marker.id)}
             >
-              {/* 删除按钮 - 放在最上面 */}
+              {/* 删除按钮 - 悬停显示 */}
               <button
-                className="absolute -top-8 left-1/2 -translate-x-1/2 w-6 h-6 bg-red-600 text-white rounded-full text-sm hover:bg-red-700 transition-colors z-50 flex items-center justify-center font-bold shadow-lg"
+                className="absolute -top-7 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-600 text-white rounded-full text-xs hover:bg-red-700 transition-all z-50 flex items-center justify-center opacity-0 group-hover:opacity-100 shadow-md"
                 onClick={(e) => handleDeleteMarker(e, marker.id)}
                 title="删除标记"
               >
