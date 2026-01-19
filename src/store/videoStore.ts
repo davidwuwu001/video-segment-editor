@@ -23,6 +23,10 @@ export const useVideoStore = create<VideoState>((set, get) => ({
   isExporting: false,
   exportProgress: 0,
 
+  // 缩放和滚动状态
+  zoomLevel: 1, // 缩放级别，1 = 100%，2 = 200%，最大 20
+  scrollOffset: 0, // 横向滚动偏移量（像素）
+
   // Actions
   setVideoFile: (file: File) => {
     const { videoUrl } = get();
@@ -251,4 +255,12 @@ export const useVideoStore = create<VideoState>((set, get) => ({
 
   setExporting: (isExporting: boolean, progress = 0) =>
     set({ isExporting, exportProgress: progress }),
+
+  setZoomLevel: (level: number) => {
+    set({ zoomLevel: Math.max(1, Math.min(20, level)) }); // 限制在 1-20 倍之间
+  },
+
+  setScrollOffset: (offset: number) => {
+    set({ scrollOffset: Math.max(0, offset) });
+  },
 }));

@@ -34,6 +34,10 @@ export interface VideoState {
   isExporting: boolean;
   exportProgress: number;
 
+  // 缩放和滚动状态
+  zoomLevel: number; // 缩放级别，1 = 100%，2 = 200%，最大 20
+  scrollOffset: number; // 横向滚动偏移量（像素）
+
   // Actions
   setVideoFile: (file: File) => void;
   clearVideo: () => void;
@@ -48,4 +52,6 @@ export interface VideoState {
   toggleSegmentSelected: (id: string) => void;
   updateSegmentTime: (id: string, startTime: number, endTime: number) => boolean;
   setExporting: (isExporting: boolean, progress?: number) => void;
+  setZoomLevel: (level: number) => void;
+  setScrollOffset: (offset: number) => void;
 }
