@@ -57,26 +57,20 @@ export function Timeline() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentTime, duration, setCurrentTime]);
 
-  // 鼠标滚轮缩放（支持触控板和鼠标滚轮）
+  // 鼠标滚轮缩放（支持触控板捏合和鼠标滚轮）
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
+      const container = containerRef.current;
+      const scrollContainer = scrollContainerRef.current;
+      if (!container || !scrollContainer) return;
+
       // 检测是否是触控板捏合手势（ctrlKey 表示捏合缩放）
       const isPinchGesture = e.ctrlKey;
       
-      // 如果是普通的横向滚动（不是捏合），不做缩放处理
-      if (!isPinchGesture && Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-        // 让浏览器处理横向滚动
-        return;
-      }
-      
-      // 只有捏合手势或鼠标滚轮才进行缩放
-      if (isPinchGesture || !e.ctrlKey) {
+      if (isPinchGesture) {
+        // 捏合缩放手势
         e.preventDefault();
         
-        const container = containerRef.current;
-        const scrollContainer = scrollContainerRef.current;
-        if (!container || !scrollContainer) return;
-
         // 获取容器的实际宽度（未缩放的基础宽度）
         const rect = scrollContainer.getBoundingClientRect();
         const baseWidth = rect.width;
@@ -87,15 +81,12 @@ export function Timeline() {
         const mouseTimePercent = mouseX / (baseWidth * zoomLevel);
 
         // 计算新的缩放级别
-        // 触控板捏合手势的 deltaY 通常较小，需要调整灵敏度
-        const zoomDelta = isPinchGesture 
-          ? (e.deltaY > 0 ? -0.1 : 0.1)  // 触控板更细腻
-          : (e.deltaY > 0 ? -0.2 : 0.2); // 鼠标滚轮更快
-        
+        // 触控板捏合手势的 deltaY 值需要调整灵敏度
+        const zoomDelta = e.deltaY > 0 ? -0.15 : 0.15;
         const newZoomLevel = Math.max(1, Math.min(20, zoomLevel + zoomDelta));
 
         // 如果缩放级别没有变化，直接返回
-        if (newZoomLevel === zoomLevel) return;
+        if (Math.abs(newZoomLevel - zoomLevel) < 0.01) return;
 
         // 计算新的滚动位置，使鼠标位置保持不变
         const newMouseX = mouseTimePercent * baseWidth * newZoomLevel;
@@ -114,9 +105,38 @@ export function Timeline() {
             timeScaleScrollRef.current.scrollLeft = Math.max(0, newScrollLeft);
           }
         }, 0);
+      } else if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        // 纵向滚动 - 用于鼠标滚轮缩放
+        e.preventDefault();
+        
+        const rect = scrollContainer.getBoundingClientRect();
+        const baseWidth = rect.width;
+        const mouseX = e.clientX - rect.left + scrollContainer.scrollLeft;
+        const mouseTimePercent = mouseX / (baseWidth * zoomLevel);
+
+        const zoomDelta = e.deltaY > 0 ? -0.2 : 0.2;
+        const newZoomLevel = Math.max(1, Math.min(20, zoomLevel + zoomDelta));
+
+        if (Math.abs(newZoomLevel - zoomLevel) < 0.01) return;
+
+        const newMouseX = mouseTimePercent * baseWidth * newZoomLevel;
+        const newScrollLeft = newMouseX - (e.clientX - rect.left);
+
+        setZoomLevel(newZoomLevel);
+        
+        setTimeout(() => {
+          if (scrollContainer) {
+            scrollContainer.scrollLeft = Math.max(0, newScrollLeft);
+            setScrollOffset(Math.max(0, newScrollLeft));
+          }
+          if (timeScaleScrollRef.current) {
+            timeScaleScrollRef.current.scrollLeft = Math.max(0, newScrollLeft);
+          }
+        }, 0);
       }
+      // 横向滚动（两指左右滑动）会被浏览器自动处理，不需要阻止
     },
-    [duration, zoomLevel, setZoomLevel, setScrollOffset]
+    [zoomLevel, setZoomLevel, setScrollOffset]
   );
 
   // 监听滚动事件，同步时间刻度滚动
@@ -273,7 +293,7 @@ export function Timeline() {
       {/* 缩放提示 */}
       <div className="flex items-center justify-between text-xs text-gray-500">
         <span>缩放级别: {zoomLevel.toFixed(1)}x</span>
-        <span>触控板捏合缩放 | 鼠标滚轮缩放 | 两指左右滑动横向滚动</span>
+        <span>触控板：捏合缩放 | 两指左右滑动横向滚动 | 鼠标：滚轮缩放</span>
       </div>
 
       {/* 时间轴容器 - 支持横向滚动 */}
