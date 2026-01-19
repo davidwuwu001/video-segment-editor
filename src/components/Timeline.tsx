@@ -303,14 +303,14 @@ export function Timeline() {
       {/* 时间轴容器 - 支持横向滚动 */}
       <div
         ref={scrollContainerRef}
-        className="overflow-x-auto overflow-y-hidden"
+        className="overflow-x-auto overflow-y-visible"
         onScroll={handleScroll}
         style={{ maxWidth: '100%' }}
       >
         <div
           ref={containerRef}
-          className="relative h-16 bg-gray-200 rounded-lg cursor-pointer select-none"
-          style={{ width: `${zoomLevel * 100}%`, minWidth: '100%' }}
+          className="relative h-16 bg-gray-200 rounded-lg cursor-pointer select-none overflow-visible"
+          style={{ width: `${zoomLevel * 100}%`, minWidth: '100%', paddingTop: '30px', paddingBottom: '30px' }}
           onClick={handleTimelineClick}
           onDoubleClick={handleDoubleClick}
           onWheel={handleWheel}
@@ -319,7 +319,7 @@ export function Timeline() {
           {segments.map((segment, index) => (
             <div
               key={segment.id}
-              className={`absolute top-0 h-full ${
+              className={`absolute h-full ${
                 !segment.selected
                   ? 'bg-gray-300 opacity-50'
                   : index % 2 === 0
@@ -329,6 +329,8 @@ export function Timeline() {
               style={{
                 left: `${getPositionPercent(segment.startTime)}%`,
                 width: `${getPositionPercent(segment.endTime - segment.startTime)}%`,
+                top: '30px',
+                height: '64px'
               }}
             >
               {!segment.selected && (
@@ -343,28 +345,30 @@ export function Timeline() {
           {markers.map((marker) => (
             <div
               key={marker.id}
-              className="absolute top-0 h-full cursor-ew-resize z-20"
+              className="absolute cursor-ew-resize z-20"
               style={{ 
                 left: `${getPositionPercent(marker.time)}%`,
-                width: '20px',
-                marginLeft: '-10px'
+                top: '30px',
+                height: '64px',
+                width: '24px',
+                marginLeft: '-12px'
               }}
               onMouseDown={(e) => handleMarkerMouseDown(e, marker.id)}
             >
-              {/* 标记线 */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 h-full w-0.5 bg-red-500 pointer-events-none" />
-              {/* 标记手柄 */}
-              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full pointer-events-none" />
-              {/* 删除按钮 - 始终显示 */}
+              {/* 删除按钮 - 放在最上面 */}
               <button
-                className="absolute -top-6 left-1/2 -translate-x-1/2 w-5 h-5 bg-red-600 text-white rounded-full text-xs hover:bg-red-700 transition-colors z-30 flex items-center justify-center"
+                className="absolute -top-8 left-1/2 -translate-x-1/2 w-6 h-6 bg-red-600 text-white rounded-full text-sm hover:bg-red-700 transition-colors z-50 flex items-center justify-center font-bold shadow-lg"
                 onClick={(e) => handleDeleteMarker(e, marker.id)}
                 title="删除标记"
               >
                 ×
               </button>
+              {/* 标记手柄 */}
+              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full pointer-events-none" />
+              {/* 标记线 */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 h-full w-0.5 bg-red-500 pointer-events-none" />
               {/* 时间提示 */}
-              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-gray-600 whitespace-nowrap pointer-events-none">
+              <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs text-gray-600 whitespace-nowrap pointer-events-none">
                 {formatTime(marker.time)}
               </div>
             </div>
@@ -372,8 +376,12 @@ export function Timeline() {
 
           {/* 当前播放位置 - 可拖动 */}
           <div
-            className="absolute top-0 h-full w-0.5 bg-blue-600 cursor-ew-resize z-30"
-            style={{ left: `${getPositionPercent(currentTime)}%` }}
+            className="absolute w-0.5 bg-blue-600 cursor-ew-resize z-30"
+            style={{ 
+              left: `${getPositionPercent(currentTime)}%`,
+              top: '30px',
+              height: '64px'
+            }}
             onMouseDown={handlePlayheadMouseDown}
           >
             <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-blue-600 rotate-45 cursor-ew-resize" />
