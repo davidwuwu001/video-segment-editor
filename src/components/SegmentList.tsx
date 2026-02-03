@@ -133,23 +133,23 @@ export function SegmentList({ onExportSingle, onExportAll, onExportMerged }: Seg
     [handleSaveTimeEdit, handleCancelTimeEdit]
   );
 
-  const handleOpenYouzan = useCallback((count: number) => {
-    const url = 'https://www.youzan.com/v4/vis/pct/page/tabs#/content';
-    window.open(url, '_blank');
-    
-    if (count > 1) {
-      setRemainingWindows(count - 1);
-    } else {
-      setShowWindowCountModal(false);
-    }
-  }, []);
+    const handleOpenYouzan = useCallback((count: number) => {
+      const url = 'https://www.youzan.com/v4/vis/pct/page/content#/add/video';
+      window.open(url, '_blank');
+      
+      if (count > 1) {
+        setRemainingWindows(count - 1);
+      } else {
+        setShowWindowCountModal(false);
+      }
+    }, []);
 
   const handleOpenNextWindow = useCallback(() => {
-    const url = 'https://www.youzan.com/v4/vis/pct/page/tabs#/content';
-    window.open(url, '_blank');
-    
-    if (remainingWindows > 1) {
-      setRemainingWindows(remainingWindows - 1);
+    const url = 'https://www.youzan.com/v4/vis/pct/page/content#/add/video';
+    window.open(url, '_blank'););
+      
+      if (remainingWindows > 1) {
+        setRemainingWindows(remainingWindows - 1);
     } else {
       setRemainingWindows(0);
       setShowWindowCountModal(false);
