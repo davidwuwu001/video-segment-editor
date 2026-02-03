@@ -200,7 +200,7 @@ export const useVideoStore = create<VideoState>((set, get) => ({
   },
 
   updateSegmentTime: (id: string, startTime: number, endTime: number) => {
-    const { segments, markers, duration, videoFile } = get();
+    const { segments, duration, videoFile } = get();
     
     // 验证时间范围
     if (startTime < 0 || endTime > duration || startTime >= endTime) {

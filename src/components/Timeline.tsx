@@ -7,8 +7,6 @@ export function Timeline() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timeScaleScrollRef = useRef<HTMLDivElement>(null);
   const [draggingMarkerId, setDraggingMarkerId] = useState<string | null>(null);
-  const [isPinching, setIsPinching] = useState(false);
-  const lastPinchDistanceRef = useRef<number>(0);
 
   const {
     duration,
@@ -16,8 +14,6 @@ export function Timeline() {
     markers,
     segments,
     zoomLevel,
-    scrollOffset,
-    isPlaying,
     setCurrentTime,
     addMarker,
     updateMarker,
