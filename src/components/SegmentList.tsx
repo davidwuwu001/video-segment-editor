@@ -146,10 +146,10 @@ export function SegmentList({ onExportSingle, onExportAll, onExportMerged }: Seg
 
   const handleOpenNextWindow = useCallback(() => {
     const url = 'https://www.youzan.com/v4/vis/pct/page/content#/add/video';
-    window.open(url, '_blank'););
-      
-      if (remainingWindows > 1) {
-        setRemainingWindows(remainingWindows - 1);
+    window.open(url, '_blank');
+    
+    if (remainingWindows > 1) {
+      setRemainingWindows(remainingWindows - 1);
     } else {
       setRemainingWindows(0);
       setShowWindowCountModal(false);
